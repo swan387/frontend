@@ -1,14 +1,13 @@
 <template>
-    <div v-if="item_list.length" style="width: 80%; margin: 0 auto;">
+    <div style="width: 80%; margin: 0 auto;">
         <!-- title, welcome message -->
         <div class="header">
             <h1 class="page-header">Welcome Back, <br>There are {{ item_list.length }} Production Lines.</h1>
             <img src="@/assets/logo.png" alt="">
         </div>
-        
 
         <!-- search bar -->
-        <el-input v-model="query" placeholder="Please input" class="input-with-select" clearable>
+        <el-input v-model.lazy="query" placeholder="Please input" class="input-with-select" clearable>
             <template #prepend>
                 <el-select v-model="select" placeholder="Select" style="width: 115px">
                     <el-option label="PO" value="1" />
@@ -21,7 +20,7 @@
         </el-input>
 
         <!-- show description for each production line -->
-        <template v-for="(item, index) of item_list" :key="item.PO">
+        <template v-for="(item, index) of filteredList" :key="item.PO">
             <!-- :title="'Production Line ' + (index + 1)" -->
             <el-descriptions :column="2" size="small" border class="desc-item">
                 <el-descriptions-item label="Prod. Line" label-align="left" align="left">
@@ -45,47 +44,60 @@
                 <el-descriptions-item label="PDF Files" label-align="left" align="left">
                     <!-- <div class="pdf-buttons"> -->
                     <el-button-group>
-                        <el-button type="" @click="viewPDF" plain>PO</el-button>
-                        <el-button type="" @click="viewPDF" plain>SKU1</el-button>
-                        <el-button type="" @click="viewPDF" plain>SKU2</el-button>
+                        <el-button type="" @click="viewPDF" plain size="small">PO</el-button>
+                        <el-button type="" @click="viewPDF" plain size="small">SKU1</el-button>
+                        <el-button type="" @click="viewPDF" plain size="small">SKU2</el-button>
                     </el-button-group>
                     <!-- <el-button type="primary" plain small>Open File</el-button> -->
                     <!-- </div> -->
                 </el-descriptions-item>
             </el-descriptions>
         </template>
-        
+
+        <el-drawer v-model="showPDF" title="I am the title" :with-header="false" size="80%">
+            <!-- append-to-body -->
+            <!-- el-drawer__body -->
+            <embed src="https://arxiv.org/pdf/2306.17459.pdf" type="application/pdf" width="100%" height="99.7%">
+        </el-drawer>
+
         <!-- That's the end of the list -->
-        <el-divider>That's all.</el-divider>
+        <el-empty v-show="!filteredList.length"></el-empty>
+        <el-divider v-show="filteredList.length">That's all.</el-divider>
     </div>
 
     <!-- empty pic -->
-    <el-empty v-else>
+    <!-- <el-empty v-if="!item_list.length">
         <el-button type="primary">Refresh</el-button>
-    </el-empty>
-
+    </el-empty> -->
 </template>
   
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Search } from '@element-plus/icons-vue';
 
 const item_list = ref([
     { PO: 101320077, SKU: 164549, Quantity: 18900.000, Status: 'REL' },
-    { PO: 101320078, SKU: 164549, Quantity: 18900.000, Status: 'REL' },
-    { PO: 101320079, SKU: 164549, Quantity: 18900.000, Status: 'REL' },
-    { PO: 101320080, SKU: 164549, Quantity: 18900.000, Status: 'REL' },
-    { PO: 101320081, SKU: 164549, Quantity: 18900.000, Status: 'REL' },
-    { PO: 101320082, SKU: 164549, Quantity: 18900.000, Status: 'REL' },
-    { PO: 101320083, SKU: 164549, Quantity: 18900.000, Status: 'REL' },
+    { PO: 101320078, SKU: 164550, Quantity: 18900.000, Status: 'REL' },
+    { PO: 101320079, SKU: 164551, Quantity: 18900.000, Status: 'REL' },
+    { PO: 101320080, SKU: 164552, Quantity: 18900.000, Status: 'REL' },
+    { PO: 101320081, SKU: 164553, Quantity: 18900.000, Status: 'REL' },
+    { PO: 101320082, SKU: 164554, Quantity: 18900.000, Status: 'REL' },
+    { PO: 101320083, SKU: 164555, Quantity: 18900.000, Status: 'REL' },
 ]);
 
 let select = ref('1');
 let query = ref('')
+let showPDF = ref(false)
 
 function viewPDF() {
-    console.log('show pdf');
+    showPDF.value = true
 }
+
+const filteredList = computed(() => {
+    return (select.value == 1 ?
+        item_list.value.filter((i) => i.PO.toString().indexOf(query.value) !== -1) :
+        item_list.value.filter((i) => i.SKU.toString().indexOf(query.value) !== -1))
+})
 
 </script>
 
@@ -114,5 +126,9 @@ function viewPDF() {
 
 .page-header {
     font-size: 30px;
+}
+
+:deep(.el-drawer__body) {
+    padding: 0;
 }
 </style>
