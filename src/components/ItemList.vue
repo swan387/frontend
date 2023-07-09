@@ -5,7 +5,7 @@
             <h1 class="page-header">Welcome Back, <br>There are {{ item_list.length }} Production Lines.</h1>
             <el-tooltip placement="bottom">
                 <template #content><span>Click to Refresh</span></template>
-                <img src="@/assets/logo.png" alt="">
+                <img src="@/assets/logo.png" alt="" @click="updateList">
             </el-tooltip>
         </div>
 
@@ -47,9 +47,9 @@
                 <el-descriptions-item label="PDF Files" label-align="left" align="left">
                     <!-- <div class="pdf-buttons"> -->
                     <el-button-group>
-                        <el-button type="" @click="viewPDF" plain size="default">PO</el-button>
-                        <el-button type="" @click="viewPDF" plain size="default">SKU1</el-button>
-                        <el-button type="" @click="viewPDF" plain size="default">SKU2</el-button>
+                        <el-button type="" @click="viewPDF" plain size="small">PO</el-button>
+                        <el-button type="" @click="viewPDF" plain size="small">SKU1</el-button>
+                        <el-button type="" @click="viewPDF" plain size="small">SKU2</el-button>
                     </el-button-group>
                     <!-- <el-button type="primary" plain small>Open File</el-button> -->
                     <!-- </div> -->
@@ -58,11 +58,9 @@
         </template>
 
         <el-drawer v-model="showPDF" :with-header="false" size="100%" :close-on-click-modal="false" :show-close="false">
-            <!-- append-to-body -->
-            <!-- el-drawer__body -->
             <div class="pdf-bottom-container">
                 <div style="flex-grow: 1;">
-                    <embed src="https://arxiv.org/pdf/2306.17459.pdf" type="application/pdf" width="100%" height="100%">
+                    <embed :src="currentPdfSrc" type="application/pdf" width="100%" height="100%">
                 </div>
                 <div class="pdf-bottom">
                     <el-button type="primary" @click="showPDF = false" plain size="default">Close</el-button>
@@ -75,17 +73,13 @@
         <el-empty v-show="!filteredList.length"></el-empty>
         <el-divider v-show="filteredList.length"><span style="color: #0088A5;">That's all.</span></el-divider>
     </div>
-
-    <!-- empty pic -->
-    <!-- <el-empty v-if="!item_list.length">
-        <el-button type="primary">Refresh</el-button>
-    </el-empty> -->
 </template>
   
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { Search } from '@element-plus/icons-vue';
-// import axios from 'axios';
+import { ElMessage } from 'element-plus';
+import { getList } from '@/api';
 
 const item_list = ref([
     { PO: 101320077, SKU: 164549, Quantity: 18900.000, Status: 'REL' },
@@ -100,17 +94,34 @@ const item_list = ref([
 let select = ref('1');
 let query = ref('');
 let showPDF = ref(false);
+let currentPdfSrc = ref("https://arxiv.org/pdf/2306.17459.pdf");
 
 function viewPDF() {
     showPDF.value = true;
 }
 
+function updateList() {
+    getList().then(res => {
+        console.log(res.data);
+        ElMessage({
+            message: 'The production lines are up to date.',
+            type: 'success',
+        });
+    }).catch(err => {
+        console.log(err);
+        ElMessage.error('Oops, it looks like something went wrong.');
+    })
+}
+
+onMounted(() => {
+    updateList();
+})
+
 const filteredList = computed(() => {
     return (select.value == 1 ?
         item_list.value.filter((i) => i.PO.toString().indexOf(query.value) !== -1) :
-        item_list.value.filter((i) => i.SKU.toString().indexOf(query.value) !== -1))
+        item_list.value.filter((i) => i.SKU.toString().indexOf(query.value) !== -1));
 })
-
 </script>
 
 <style scoped>
@@ -139,6 +150,7 @@ html * {
 .header img {
     height: 100px;
     padding-top: 5px;
+    cursor: pointer;
 }
 
 .page-header {
@@ -161,7 +173,6 @@ html * {
     display: flex;
     flex-direction: column;
 }
-
 
 .pdf-bottom {
     display: flex;
