@@ -23,36 +23,29 @@
         </el-input>
 
         <!-- show description for each production line -->
-        <template v-for="(item, index) of filteredList" :key="item.PO">
+        <template v-for="item of filteredList" :key="item.po">
             <!-- :title="'Production Line ' + (index + 1)" -->
             <el-descriptions :column="2" size="default" border class="desc-item">
                 <el-descriptions-item label="Prod. Line" label-align="left" align="left">
-                    {{ index + 1 }} <el-tag size="small">{{ item.Status }}</el-tag>
+                    {{ item.pd }} <el-tag size="small">{{ item.status }}</el-tag>
                 </el-descriptions-item>
                 <el-descriptions-item label="PO" label-align="left" align="left">
-                    {{ item.PO }}
+                    {{ item.po }}
                 </el-descriptions-item>
                 <el-descriptions-item label="SKU" label-align="left" align="left">
-                    {{ item.SKU }}
+                    {{ item.sku }}
                 </el-descriptions-item>
                 <el-descriptions-item label="Quantity" label-align="left" align="left">
-                    {{ item.Quantity }}
+                    {{ item.quantity }}
                 </el-descriptions-item>
-                <!-- <el-descriptions-item label="Status" label-align="left" align="left">
-                    <el-tag size="small">
-                        {{ item.Status }}
-                    </el-tag>
-                </el-descriptions-item> -->
+
                 <!-- PDF preview -->
                 <el-descriptions-item label="PDF Files" label-align="left" align="left">
-                    <!-- <div class="pdf-buttons"> -->
                     <el-button-group>
-                        <el-button type="" @click="viewPDF" plain size="small">PO</el-button>
-                        <el-button type="" @click="viewPDF" plain size="small">SKU1</el-button>
-                        <el-button type="" @click="viewPDF" plain size="small">SKU2</el-button>
+                        <el-button type="" @click="viewPDF(item, 'po')" plain size="small">PO</el-button>
+                        <el-button type="" @click="viewPDF(item, 'sku1')" plain size="small">SKU1</el-button>
+                        <el-button type="" @click="viewPDF(item, 'sku2')" plain size="small">SKU2</el-button>
                     </el-button-group>
-                    <!-- <el-button type="primary" plain small>Open File</el-button> -->
-                    <!-- </div> -->
                 </el-descriptions-item>
             </el-descriptions>
         </template>
@@ -79,30 +72,33 @@
 import { ref, computed, onMounted } from 'vue';
 import { Search } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
-import { getList } from '@/api';
+import { getList, getPDF } from '@/api';
 
-const item_list = ref([
-    { PO: 101320077, SKU: 164549, Quantity: 18900.000, Status: 'REL' },
-    { PO: 101320078, SKU: 164550, Quantity: 18900.000, Status: 'REL' },
-    { PO: 101320079, SKU: 164551, Quantity: 18900.000, Status: 'REL' },
-    { PO: 101320080, SKU: 164552, Quantity: 18900.000, Status: 'REL' },
-    { PO: 101320081, SKU: 164553, Quantity: 18900.000, Status: 'REL' },
-    { PO: 101320082, SKU: 164554, Quantity: 18900.000, Status: 'REL' },
-    { PO: 101320083, SKU: 164555, Quantity: 18900.000, Status: 'REL' },
-]);
-
+let item_list = ref([]);
 let select = ref('1');
 let query = ref('');
 let showPDF = ref(false);
-let currentPdfSrc = ref("https://arxiv.org/pdf/2306.17459.pdf");
+let currentPdfSrc = ref("");
 
-function viewPDF() {
-    showPDF.value = true;
+function viewPDF(item, mode) {
+    let filename = '';
+    switch (mode) {
+        case 'po':
+            filename = item.po + '.pdf'
+            break;
+        case 'sku1':
+            filename = `Packing Spec ${item.sku} .pdf`
+            break;
+        case 'sku2':
+            filename = `Shopping Layout ${item.sku} .pdf`
+            break;
+    }
+    openPDF(filename);
 }
 
 function updateList() {
     getList().then(res => {
-        console.log(res.data);
+        item_list.value = res.data.results;
         ElMessage({
             message: 'The production lines are up to date.',
             type: 'success',
@@ -113,14 +109,30 @@ function updateList() {
     })
 }
 
+function openPDF(filename) {
+    getPDF(filename).then(res => {
+        let file = new Blob([res.data], { type: 'application/pdf' })
+        let fileURL = URL.createObjectURL(file);
+        currentPdfSrc.value = fileURL;
+        showPDF.value = true;
+    }).catch(err => {
+        console.log(err);
+        showPDF.value = false;
+        if (err.response.status == 404)
+            ElMessage.error('File not found.');
+        else
+            ElMessage.error('Oops, it looks like something went wrong.');
+    })
+}
+
 onMounted(() => {
     updateList();
 })
 
 const filteredList = computed(() => {
     return (select.value == 1 ?
-        item_list.value.filter((i) => i.PO.toString().indexOf(query.value) !== -1) :
-        item_list.value.filter((i) => i.SKU.toString().indexOf(query.value) !== -1));
+        item_list.value.filter((i) => i.po.toString().indexOf(query.value) !== -1) :
+        item_list.value.filter((i) => i.sku.toString().indexOf(query.value) !== -1));
 })
 </script>
 

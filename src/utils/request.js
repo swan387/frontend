@@ -3,7 +3,7 @@ import axios from "axios";
 export function request(config) {
     // axios instance
     const instance = axios.create({
-        baseURL: 'https://jsonplaceholder.typicode.com',
+        baseURL: 'http://127.0.0.1:5000/',
         timeout: 5000
     });
 
@@ -29,3 +29,4 @@ export function request(config) {
 
     return instance(config);
 }
+
